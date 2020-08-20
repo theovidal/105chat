@@ -3,9 +3,9 @@ package main
 import "errors"
 
 type User struct {
-	ID    int
-	Email string
-	Name  string
+	ID    int    `json:"-"`
+	Email string `json:"-"`
+	Name  string `json:"name"`
 }
 
 var accounts = []User{

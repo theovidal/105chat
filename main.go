@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -9,7 +10,7 @@ import (
 )
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Message)
+var broadcast = make(chan Event)
 
 // Echo the data received on the WebSocket.
 func EchoServer(ws *websocket.Conn) {
@@ -45,25 +46,37 @@ func EchoServer(ws *websocket.Conn) {
 	clients[ws] = true
 
 	for {
-		var message string
-		err := websocket.Message.Receive(ws, &message)
+		var message Payload
+		err := websocket.JSON.Receive(ws, &message)
 		if err != nil {
 			delete(clients, ws)
 			break
 		}
 
-		broadcast <- Message{
-			Author:  &user,
-			Content: message,
+		var toSend interface{}
+
+		switch message.Type {
+		case "MESSAGE_CREATE":
+			data, _ := ParseMessageCreatePayload(message.Data)
+			toSend = MessageCreateEvent{
+				Author:  &user,
+				Room:    data.Room,
+				Content: data.Content,
+			}
+		}
+
+		broadcast <- Event{
+			Type: message.Type,
+			Data: toSend,
 		}
 	}
 }
 
 func HandleBroadcasts() {
 	for {
-		message := <-broadcast
+		event := <-broadcast
 		for client := range clients {
-			err := websocket.Message.Send(client, message.String())
+			err := websocket.JSON.Send(client, event)
 			if err != nil {
 				client.Close()
 				delete(clients, client)
@@ -74,7 +87,7 @@ func HandleBroadcasts() {
 
 // This example demonstrates a trivial echo server.
 func main() {
-	println("105chat started")
+	log.Println("105chat started")
 	go HandleBroadcasts()
 	http.Handle("/live", websocket.Handler(EchoServer))
 	err := http.ListenAndServe("localhost:105", nil)
