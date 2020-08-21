@@ -27,6 +27,7 @@ git clone git@github.com:theovidal/105chat          # SSH
 
 ## 📜 Credits
 
+- Library : [gorilla/mux](https://github.com/gorilla/mux) (HTTP router)
 - Maintainer: [Théo Vidal](https://github.com/theovidal) 
 
 ## 🔐 License
