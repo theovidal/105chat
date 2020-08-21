@@ -1,6 +1,10 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+	"strconv"
+)
 
 type User struct {
 	ID    int    `json:"-"`
@@ -19,6 +23,14 @@ var accounts = []User{
 		Email: "didier@becauseofprog.fr",
 		Name:  "Didier",
 	},
+}
+
+func FindUserFromRequest(r *http.Request) (user User, err error) {
+	header := r.Header.Get("Authentication")
+	token, _ := strconv.Atoi(header)
+
+	user, err = FindUser(token)
+	return
 }
 
 func FindUser(id int) (User, error) {
