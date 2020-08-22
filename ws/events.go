@@ -1,6 +1,10 @@
-package main
+package ws
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/theovidal/105chat/models"
+)
 
 type Event struct {
 	Type string      `json:"type"`
@@ -8,9 +12,9 @@ type Event struct {
 }
 
 type MessageCreateEvent struct {
-	Author  *User  `json:"author"`
-	Room    int    `json:"room"`
-	Content string `json:"content"`
+	Author  *models.User `json:"author"`
+	Room    int          `json:"room"`
+	Content string       `json:"content"`
 }
 
 func (m *MessageCreateEvent) String() string {

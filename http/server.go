@@ -1,4 +1,4 @@
-package main
+package http
 
 import (
 	"encoding/json"
@@ -8,11 +8,14 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"github.com/theovidal/105chat/models"
+	"github.com/theovidal/105chat/ws"
 )
 
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := FindUserFromRequest(r); err == nil {
+		if _, err := models.FindUserFromRequest(r); err == nil {
 			next.ServeHTTP(w, r)
 		} else {
 			http.Error(w, "Forbidden", http.StatusForbidden)
@@ -20,7 +23,7 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func HTTPServer() {
+func Server() {
 	httpServer := mux.NewRouter().StrictSlash(true)
 	httpServer.HandleFunc("/http/room/{room}/messages", CreateMessage)
 
@@ -35,7 +38,7 @@ func HTTPServer() {
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
-	user, _ := FindUserFromRequest(r)
+	user, _ := models.FindUserFromRequest(r)
 
 	vars := mux.Vars(r)
 	room, err := strconv.Atoi(vars["room"])
@@ -52,9 +55,9 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	broadcast <- Event{
+	ws.Pipeline <- ws.Event{
 		Type: "CREATE_MESSAGE",
-		Data: MessageCreateEvent{
+		Data: ws.MessageCreateEvent{
 			Author:  &user,
 			Content: payload.Content,
 			Room:    room,

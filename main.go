@@ -1,18 +1,77 @@
 package main
 
 import (
-	"golang.org/x/net/websocket"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	"golang.org/x/net/websocket"
+
+	httpServer "github.com/theovidal/105chat/http"
+	"github.com/theovidal/105chat/ws"
 )
 
+type Command struct {
+	Name        string
+	Description string
+	FlagSet     *flag.FlagSet
+	Handler     func([]string)
+}
+
+func (c *Command) String() string {
+	return fmt.Sprintf("%s - %s", c.Name, c.Description)
+}
+
+var commands = make(map[string]Command)
+
 func main() {
+	commands = map[string]Command{
+		"run": Command{
+			Name:        "run",
+			Description: "Run the 105chat server",
+			FlagSet:     flag.NewFlagSet("run", flag.ExitOnError),
+			Handler:     Run,
+		},
+		"help": Command{
+			Name:        "help",
+			Description: "Show help",
+			FlagSet:     flag.NewFlagSet("help", flag.ExitOnError),
+			Handler:     Help,
+		},
+	}
+
+	if len(os.Args) < 2 {
+		Help([]string{})
+		os.Exit(0)
+	}
+
+	command, found := commands[os.Args[1]]
+	if !found {
+		fmt.Println("Command", os.Args[1], "is not valid. Run help command to get the full list of commands")
+		os.Exit(1)
+	}
+
+	command.Handler(command.FlagSet.Args())
+}
+
+func Help(_ []string) {
+	fmt.Println("───── 105chat CLI help ─────\n")
+
+	fmt.Println("COMMANDS")
+	for _, command := range commands {
+		fmt.Println(command.String())
+	}
+}
+
+func Run(_ []string) {
 	log.Println("Starting 105chat...")
 
-	go HandleBroadcasts()
-	http.Handle("/ws", websocket.Handler(WebSocketServer))
+	go ws.HandlePipeline()
+	http.Handle("/ws", websocket.Handler(ws.Server))
 
-	go HTTPServer()
+	go httpServer.Server()
 
 	log.Println("WebSocket server ready")
 	err := http.ListenAndServe("localhost:1051", nil)

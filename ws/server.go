@@ -1,19 +1,20 @@
-package main
+package ws
 
 import (
 	"fmt"
 	"strconv"
 
 	"golang.org/x/net/websocket"
+
+	"github.com/theovidal/105chat/models"
 )
 
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Event)
 
-func WebSocketServer(ws *websocket.Conn) {
+func Server(ws *websocket.Conn) {
 	websocket.Message.Send(ws, "Merci d'inscrire votre identifiant pour vous connecter.")
 
-	var user User
+	var user models.User
 	var err error
 	var input string
 	var trials int
@@ -21,7 +22,7 @@ func WebSocketServer(ws *websocket.Conn) {
 	for {
 		websocket.Message.Receive(ws, &input)
 		id, _ := strconv.Atoi(input)
-		user, err = FindUser(id)
+		user, err = models.FindUser(id)
 		if err != nil {
 			websocket.Message.Send(ws, "Identifiant invalide!")
 			trials += 1
@@ -51,18 +52,5 @@ func WebSocketServer(ws *websocket.Conn) {
 		}
 
 		websocket.Message.Send(ws, "Aucune commande disponible (pour le moment)")
-	}
-}
-
-func HandleBroadcasts() {
-	for {
-		event := <-broadcast
-		for client := range clients {
-			err := websocket.JSON.Send(client, event)
-			if err != nil {
-				client.Close()
-				delete(clients, client)
-			}
-		}
 	}
 }
