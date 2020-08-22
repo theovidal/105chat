@@ -1,33 +1,36 @@
 package ws
 
 import (
-	"fmt"
-	"strconv"
-
 	"golang.org/x/net/websocket"
 
-	"github.com/theovidal/105chat/models"
+	"github.com/theovidal/105chat/db"
 )
 
-var clients = make(map[*websocket.Conn]bool)
-
 func Server(ws *websocket.Conn) {
-	websocket.Message.Send(ws, "Merci d'inscrire votre identifiant pour vous connecter.")
+	websocket.JSON.Send(ws, H{
+		"code":    2,
+		"message": "Please identify using your token",
+	})
 
-	var user models.User
+	var user db.User
 	var err error
-	var input string
+	var token string
 	var trials int
 	var closed bool
 	for {
-		websocket.Message.Receive(ws, &input)
-		id, _ := strconv.Atoi(input)
-		user, err = models.FindUser(id)
+		websocket.Message.Receive(ws, &token)
+		user, err = db.FindUserByToken(token)
 		if err != nil {
-			websocket.Message.Send(ws, "Identifiant invalide!")
+			websocket.JSON.Send(ws, H{
+				"code":    0,
+				"message": "Invalid token",
+			})
 			trials += 1
 			if trials == 3 {
-				websocket.Message.Send(ws, "3 tentatives échouées - fermeture de la session")
+				websocket.JSON.Send(ws, H{
+					"code":    0,
+					"message": "Too many failed requests, closing connection",
+				})
 				ws.Close()
 				closed = true
 			}
@@ -40,7 +43,10 @@ func Server(ws *websocket.Conn) {
 		return
 	}
 
-	websocket.Message.Send(ws, fmt.Sprintf("Bienvenue dans le chat, %s !", user.Name))
+	websocket.JSON.Send(ws, H{
+		"code": 1,
+		"data": &user,
+	})
 	clients[ws] = true
 
 	for {
@@ -51,6 +57,9 @@ func Server(ws *websocket.Conn) {
 			break
 		}
 
-		websocket.Message.Send(ws, "Aucune commande disponible (pour le moment)")
+		websocket.JSON.Send(ws, H{
+			"code":    0,
+			"message": "Unknown command",
+		})
 	}
 }
