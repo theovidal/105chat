@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/theovidal/105chat/db"
 	"log"
 	"net/http"
 	"os"
@@ -28,17 +29,23 @@ var commands = make(map[string]Command)
 
 func main() {
 	commands = map[string]Command{
+		"help": Command{
+			Name:        "help",
+			Description: "Show help",
+			FlagSet:     flag.NewFlagSet("help", flag.ExitOnError),
+			Handler:     Help,
+		},
 		"run": Command{
 			Name:        "run",
 			Description: "Run the 105chat server",
 			FlagSet:     flag.NewFlagSet("run", flag.ExitOnError),
 			Handler:     Run,
 		},
-		"help": Command{
-			Name:        "help",
-			Description: "Show help",
-			FlagSet:     flag.NewFlagSet("help", flag.ExitOnError),
-			Handler:     Help,
+		"migrate": Command{
+			Name:        "migrate",
+			Description: "Migrate database models",
+			FlagSet:     flag.NewFlagSet("migrate", flag.ExitOnError),
+			Handler:     Migrate,
 		},
 	}
 
@@ -78,4 +85,10 @@ func Run(_ []string) {
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
+}
+
+func Migrate(_ []string) {
+	log.Println("Database migration started")
+	db.Database.AutoMigrate(&db.User{}, &db.Message{}, &db.Room{})
+	log.Println("Database migration complete")
 }
