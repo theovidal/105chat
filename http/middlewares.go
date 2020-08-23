@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/theovidal/105chat/db"
@@ -8,8 +9,9 @@ import (
 
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := db.FindUserFromRequest(r); err == nil {
-			next.ServeHTTP(w, r)
+		if user, err := db.FindUserFromRequest(r); err == nil {
+			userContext := context.WithValue(r.Context(), "user", user)
+			next.ServeHTTP(w, r.WithContext(userContext))
 		} else {
 			Response(w, http.StatusUnauthorized, nil)
 		}
