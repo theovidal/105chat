@@ -1,5 +1,6 @@
 package http
 
 type MessageCreatePayload struct {
-	Content string
+	Content      string
+	Announcement bool
 }
