@@ -8,9 +8,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Methods is a shortcut that stores a list of operations
 type Methods map[string]Operation
+
+// Operation is a shortcut that stores a handler function
 type Operation func(w http.ResponseWriter, r *http.Request)
 
+// operations contains a list of available endpoints on the API with their method
 var operations = map[string]Methods{
 	"users/{user}": {
 		"GET": GetUser,
@@ -27,6 +31,7 @@ var operations = map[string]Methods{
 	},
 }
 
+// Server runs the HTTP server
 func Server() {
 	httpServer := mux.NewRouter().StrictSlash(true)
 

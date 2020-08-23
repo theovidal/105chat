@@ -10,9 +10,12 @@ import (
 	"github.com/qor/validations"
 )
 
-var Database = openDb()
+// Database is the database used to store static content (messages, rooms, users...).
+// For now it's a SQLite DB, change to MySQL or PostgreSQL is planned
+var Database = openDatabase()
 
-func openDb() *gorm.DB {
+// openDatabase setups the database, and create the file if it doesn't exists
+func openDatabase() *gorm.DB {
 	filename := "testing.sqlite"
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {

@@ -7,6 +7,7 @@ import (
 	"github.com/theovidal/105chat/db"
 )
 
+// GetUser returns information about a specific user thanks to their ID
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err := ParseUserFromURL(&w, r)
 	if err != nil {
@@ -16,6 +17,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	Response(w, http.StatusOK, user)
 }
 
+// ParseUserFromURL checks for errors in the passed user ID inside request's URL
 func ParseUserFromURL(w *http.ResponseWriter, r *http.Request) (user *db.User, err error) {
 	user, err = db.FindUserFromURL(r)
 	if errors.Is(err, db.InvalidType) {

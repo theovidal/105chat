@@ -7,6 +7,7 @@ import (
 	"github.com/theovidal/105chat/db"
 )
 
+// AuthenticationMiddleware checks that user is authenticated before doing a request
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if user, err := db.FindUserFromRequest(r); err == nil {

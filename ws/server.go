@@ -6,6 +6,7 @@ import (
 	"github.com/theovidal/105chat/db"
 )
 
+// Server starts the WebSocket server
 func Server(ws *websocket.Conn) {
 	websocket.JSON.Send(ws, H{
 		"code":    2,

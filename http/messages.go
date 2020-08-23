@@ -9,6 +9,7 @@ import (
 	"github.com/theovidal/105chat/ws"
 )
 
+// CreateMessage sends a message from a user in a room
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(db.User)
 	room, err := ParseRoomFromURL(&w, r)
@@ -45,6 +46,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	Response(w, http.StatusNoContent, nil)
 }
 
+// GetRoomMessages returns up to 25 messages in a specific room
 func GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 	room, err := ParseRoomFromURL(&w, r)
 	if err != nil {

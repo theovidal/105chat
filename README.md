@@ -1,6 +1,10 @@
 # 105chat
 
-A simple Go and WebSocket chat.
+A simple chat application made with Go.
+
+**⚠ This is a small project that I created in order to learn about Golang, APIs and WebSockets.
+Security and performance are well under other chat apps, and the project isn't aimed to be used
+in production.**
 
 - [🌈 How it works](#-how-it-works)
 - [💻 Development](#-development)
@@ -27,7 +31,8 @@ git clone git@github.com:theovidal/105chat          # SSH
 
 ## 📜 Credits
 
-- Library : [gorilla/mux](https://github.com/gorilla/mux) (HTTP router)
+- Libraries : [gorilla/mux](https://github.com/gorilla/mux), [gorm](https://github.com/jinzhu/gorm) (with [validations](https://github.com/qor/validations))
+- Structure and behavior inspired from [Discord](https://discord.com), an app I❤
 - Maintainer: [Théo Vidal](https://github.com/theovidal) 
 
 ## 🔐 License

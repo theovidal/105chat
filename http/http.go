@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// ParseBody parses request's body (JSON data) into an interface
 func ParseBody(r *http.Request, payload interface{}) (err error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -15,6 +16,7 @@ func ParseBody(r *http.Request, payload interface{}) (err error) {
 	return json.Unmarshal(body, &payload)
 }
 
+// Response encodes a JSON response to the user
 func Response(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	if data != nil {
