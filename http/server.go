@@ -1,7 +1,7 @@
 package http
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -12,8 +12,17 @@ type Methods map[string]Operation
 type Operation func(w http.ResponseWriter, r *http.Request)
 
 var operations = map[string]Methods{
-	"/http/room/{room}/messages": {
-		"GET":  ReadMessages,
+	"users/{user}": {
+		"GET": GetUser,
+	},
+	"rooms": {
+		"GET": GetRooms,
+	},
+	"rooms/{room}": {
+		"GET": GetRoom,
+	},
+	"rooms/{room}/messages": {
+		"GET":  GetRoomMessages,
 		"POST": CreateMessage,
 	},
 }
@@ -22,8 +31,9 @@ func Server() {
 	httpServer := mux.NewRouter().StrictSlash(true)
 
 	for path, methods := range operations {
+		fullPath := fmt.Sprintf("/v1/http/%s", path)
 		for method, handler := range methods {
-			httpServer.HandleFunc(path, handler).Methods(method)
+			httpServer.HandleFunc(fullPath, handler).Methods(method)
 		}
 	}
 
@@ -34,13 +44,5 @@ func Server() {
 	err := http.ListenAndServe("localhost:1052", httpServer)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
-	}
-}
-
-func Response(w http.ResponseWriter, code int, data interface{}) {
-	w.WriteHeader(code)
-	if data != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
 	}
 }

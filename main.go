@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/theovidal/105chat/db"
 	"log"
 	"net/http"
 	"os"
 
 	"golang.org/x/net/websocket"
 
+	"github.com/theovidal/105chat/db"
 	httpServer "github.com/theovidal/105chat/http"
 	"github.com/theovidal/105chat/ws"
 )
@@ -76,7 +76,7 @@ func Run(_ []string) {
 	log.Println("Starting 105chat...")
 
 	go ws.HandlePipeline()
-	http.Handle("/ws", websocket.Handler(ws.Server))
+	http.Handle("/v1/ws", websocket.Handler(ws.Server))
 
 	go httpServer.Server()
 
