@@ -7,6 +7,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/qor/validations"
 )
 
 var Database = openDb()
@@ -25,6 +26,7 @@ func openDb() *gorm.DB {
 	if err != nil {
 		log.Panic(fmt.Sprintf("failed to connect database : %s", err))
 	}
+	validations.RegisterCallbacks(db)
 
 	return db
 }
