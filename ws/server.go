@@ -34,7 +34,9 @@ func Server(ws *websocket.Conn) {
 				Event: USER_DISCONNECT,
 				Data:  user.ID,
 			}
-			delete(clients, user.ID)
+			station.Lock()
+			delete(station.clients, user.ID)
+			station.Unlock()
 			break
 		}
 
@@ -65,7 +67,9 @@ func Server(ws *websocket.Conn) {
 						Event: USER_CONNECT,
 						Data:  user.ID,
 					}
-					clients[user.ID] = ws
+					station.Lock()
+					station.clients[user.ID] = ws
+					station.Unlock()
 				}
 			} else {
 				websocket.JSON.Send(ws, Event{

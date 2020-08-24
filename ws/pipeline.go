@@ -9,12 +9,24 @@ var Pipeline = make(chan Event)
 func HandlePipeline() {
 	for {
 		event := <-Pipeline
-		for id, client := range clients {
+		var toClose []uint
+
+		station.RLock()
+		for id, client := range station.clients {
 			err := websocket.JSON.Send(client, event)
 			if err != nil {
 				client.Close()
-				delete(clients, id)
+				toClose = append(toClose, id)
 			}
+		}
+		station.RUnlock()
+
+		if len(toClose) != 0 {
+			station.Lock()
+			for _, id := range toClose {
+				delete(station.clients, id)
+			}
+			station.Unlock()
 		}
 	}
 }
