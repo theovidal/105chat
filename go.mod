@@ -3,7 +3,7 @@ module github.com/theovidal/105chat
 go 1.13
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20200819183940-29e1ff8eb0bb // indirect
+	github.com/asaskevich/govalidator v0.0.0-20200819183940-29e1ff8eb0bb
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.16
