@@ -4,7 +4,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/asaskevich/govalidator"
+
 	"github.com/theovidal/105chat/db"
+	"github.com/theovidal/105chat/http/controllers"
+	"github.com/theovidal/105chat/ws"
 )
 
 // GetUser returns information about a specific user thanks to their ID
@@ -17,12 +21,46 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	Response(w, http.StatusOK, user)
 }
 
+// UpdateUserProfile is used by a user to edit their profile
+func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	userToUpdate, err := ParseUserFromURL(&w, r)
+	if err != nil {
+		return
+	}
+	authenticatedUser := r.Context().Value("user").(db.User)
+	if userToUpdate.ID != authenticatedUser.ID {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var payload UserProfileUpdatePayload
+	if err = ParseBody(r, &payload); err != nil {
+		Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	payload.Name = govalidator.Trim(payload.Name, "")
+	payload.AvatarURL = govalidator.Trim(payload.AvatarURL, "")
+	payload.Description = govalidator.Trim(payload.Description, "")
+	err = db.Database.Model(userToUpdate).Updates(payload).Error
+	if err != nil {
+		Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	ws.Pipeline <- ws.Event{
+		Type: ws.USER_PROFILE_UPDATE,
+		Data: &userToUpdate,
+	}
+	Response(w, http.StatusNoContent, nil)
+}
+
 // ParseUserFromURL checks for errors in the passed user ID inside request's URL
 func ParseUserFromURL(w *http.ResponseWriter, r *http.Request) (user *db.User, err error) {
-	user, err = db.FindUserFromURL(r)
-	if errors.Is(err, db.InvalidType) {
+	user, err = controllers.FindUserFromURL(r)
+	if errors.Is(err, controllers.InvalidType) {
 		Response(*w, http.StatusBadRequest, nil)
-	} else if errors.Is(err, db.UnknownUser) {
+	} else if errors.Is(err, controllers.UnknownUser) {
 		Response(*w, http.StatusNotFound, nil)
 	}
 	return

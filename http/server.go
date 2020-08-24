@@ -17,7 +17,8 @@ type Operation func(w http.ResponseWriter, r *http.Request)
 // operations contains a list of available endpoints on the API with their method
 var operations = map[string]Methods{
 	"users/{user}": {
-		"GET": GetUser,
+		"GET":   GetUser,
+		"PATCH": UpdateUserProfile,
 	},
 	"rooms": {
 		"GET": GetRooms,
@@ -28,6 +29,11 @@ var operations = map[string]Methods{
 	"rooms/{room}/messages": {
 		"GET":  GetRoomMessages,
 		"POST": CreateMessage,
+	},
+	"rooms/{room}/messages/{message}": {
+		"GET":    GetRoomMessage,
+		"PATCH":  UpdateRoomMessage,
+		"DELETE": DeleteRoomMessage,
 	},
 }
 
