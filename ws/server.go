@@ -1,6 +1,8 @@
 package ws
 
 import (
+	"time"
+
 	"golang.org/x/net/websocket"
 
 	"github.com/theovidal/105chat/db"
@@ -8,59 +10,80 @@ import (
 
 // Server starts the WebSocket server
 func Server(ws *websocket.Conn) {
-	websocket.JSON.Send(ws, H{
-		"code":    2,
-		"message": "Please identify using your token",
+	websocket.JSON.Send(ws, Event{
+		Event: AUTHENTICATION_NEEDED,
 	})
 
 	var user db.User
-	var err error
-	var token string
 	var trials int
-	var closed bool
+
 	for {
-		websocket.Message.Receive(ws, &token)
-		user, err = db.FindUserByToken(token)
-		if err != nil {
-			websocket.JSON.Send(ws, H{
-				"code":    0,
-				"message": "Invalid token",
+		if trials >= 3 {
+			websocket.JSON.Send(ws, Event{
+				Event: CLOSE,
+				Data:  "Too many failed authentications",
 			})
-			trials += 1
-			if trials == 3 {
-				websocket.JSON.Send(ws, H{
-					"code":    0,
-					"message": "Too many failed requests, closing connection",
-				})
-				ws.Close()
-				closed = true
+			ws.Close()
+			break
+		}
+
+		ws.SetReadDeadline(time.Now().Add(time.Minute))
+		var event Event
+		if err := websocket.JSON.Receive(ws, &event); err != nil {
+			Pipeline <- Event{
+				Event: USER_DISCONNECT,
+				Data:  user.ID,
 			}
+			delete(clients, user.ID)
+			break
+		}
+
+		if user.ID == 0 {
+			if event.Event == CONNECT {
+				token, valid := event.Data.(string)
+				if !valid {
+					websocket.JSON.Send(ws, Event{
+						Event: ERROR,
+						Data:  ERROR402,
+					})
+					continue
+				}
+
+				var err error
+				user, err = db.FindUserByToken(token)
+				if err != nil {
+					websocket.JSON.Send(ws, Event{
+						Event: AUTHENTICATION_FAIL,
+					})
+					trials += 1
+				} else {
+					websocket.JSON.Send(ws, Event{
+						Event: AUTHENTICATION_SUCCESS,
+						Data:  &user,
+					})
+					Pipeline <- Event{
+						Event: USER_CONNECT,
+						Data:  user.ID,
+					}
+					clients[user.ID] = ws
+				}
+			} else {
+				websocket.JSON.Send(ws, Event{
+					Event: ERROR,
+					Data:  ERROR401,
+				})
+			}
+			continue
+		}
+
+		handler, valid := clientEvents[event.Event]
+		if !valid {
+			websocket.JSON.Send(ws, Event{
+				Event: ERROR,
+				Data:  ERROR404,
+			})
 		} else {
-			break
+			handler(ws, &user, &event)
 		}
-	}
-
-	if closed {
-		return
-	}
-
-	websocket.JSON.Send(ws, H{
-		"code": 1,
-		"data": &user,
-	})
-	clients[ws] = true
-
-	for {
-		var message string
-		err := websocket.Message.Receive(ws, &message)
-		if err != nil {
-			delete(clients, ws)
-			break
-		}
-
-		websocket.JSON.Send(ws, H{
-			"code":    0,
-			"message": "Unknown command",
-		})
 	}
 }

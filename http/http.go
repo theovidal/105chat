@@ -20,7 +20,7 @@ func ParseBody(r *http.Request, payload interface{}) (err error) {
 func Response(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	if data != nil {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Event", "application/json")
 		json.NewEncoder(w).Encode(data)
 	}
 }

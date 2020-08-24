@@ -43,11 +43,11 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ws.Pipeline <- ws.Event{
-		Type: ws.MESSAGE_CREATE,
-		Data: &message,
+		Event: ws.MESSAGE_CREATE,
+		Data:  &message,
 	}
 
-	Response(w, http.StatusNoContent, nil)
+	Response(w, http.StatusCreated, nil)
 }
 
 // GetRoomMessages returns up to 25 messages in a specific room
@@ -106,8 +106,8 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ws.Pipeline <- ws.Event{
-		Type: ws.MESSAGE_UPDATE,
-		Data: &message,
+		Event: ws.MESSAGE_UPDATE,
+		Data:  &message,
 	}
 	Response(w, http.StatusNoContent, nil)
 }
@@ -128,7 +128,7 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 	db.Database.Delete(message)
 
 	ws.Pipeline <- ws.Event{
-		Type: ws.MESSAGE_DELETE,
+		Event: ws.MESSAGE_DELETE,
 		Data: ws.H{
 			"id":      message.ID,
 			"room_id": message.RoomID,

@@ -49,8 +49,8 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ws.Pipeline <- ws.Event{
-		Type: ws.USER_PROFILE_UPDATE,
-		Data: &userToUpdate,
+		Event: ws.USER_PROFILE_UPDATE,
+		Data:  &userToUpdate,
 	}
 	Response(w, http.StatusNoContent, nil)
 }
