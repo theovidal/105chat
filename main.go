@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/fatih/color"
+	"github.com/joho/godotenv"
 	"golang.org/x/net/websocket"
 
 	"github.com/theovidal/105chat/db"
@@ -28,6 +30,11 @@ func (c *Command) String() string {
 var commands = make(map[string]Command)
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file at the root - Ignoring")
+	}
+
 	commands = map[string]Command{
 		"help": Command{
 			Name:        "help",
@@ -73,17 +80,19 @@ func Help(_ []string) {
 }
 
 func Run(_ []string) {
-	log.Println("Starting 105chat...")
+	color.HiGreen("\n  _____   ________   ________   ________   ___  ___   ________   _________   \n / __  \\ |\\   __  \\ |\\   ____\\ |\\   ____\\ |\\  \\|\\  \\ |\\   __  \\ |\\___   ___\\ \n|\\/_|\\  \\\\ \\  \\|\\  \\\\ \\  \\___|_\\ \\  \\___| \\ \\  \\\\\\  \\\\ \\  \\|\\  \\\\|___ \\  \\_| \n\\|/ \\ \\  \\\\ \\  \\\\\\  \\\\ \\_____  \\\\ \\  \\     \\ \\   __  \\\\ \\   __  \\    \\ \\  \\  \n     \\ \\  \\\\ \\  \\\\\\  \\\\|____|\\  \\\\ \\  \\____ \\ \\  \\ \\  \\\\ \\  \\ \\  \\    \\ \\  \\ \n      \\ \\__\\\\ \\_______\\ ____\\_\\  \\\\ \\_______\\\\ \\__\\ \\__\\\\ \\__\\ \\__\\    \\ \\__\\\n       \\|__| \\|_______||\\_________\\\\|_______| \\|__|\\|__| \\|__|\\|__|     \\|__|\n                       \\|_________|                                          \n")
+	db.OpenDatabase()
 
 	go ws.HandlePipeline()
 	http.Handle("/v1/ws", websocket.Handler(ws.Server))
 
 	go httpServer.Server()
 
-	log.Println("WebSocket server ready")
-	err := http.ListenAndServe("localhost:1051", nil)
+	addr := os.Getenv("WS_ADDRESS") + ":" + os.Getenv("WS_PORT")
+	log.Println("WS server listening on", color.CyanString(addr))
+	err := http.ListenAndServe(addr, nil)
 	if err != nil {
-		panic("ListenAndServe: " + err.Error())
+		log.Panicf("WS server fatal error: %s", err.Error())
 	}
 }
 
