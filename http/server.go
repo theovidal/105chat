@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/mux"
 )
 
@@ -51,9 +53,10 @@ func Server() {
 	httpServer.Use(AuthenticationMiddleware)
 	httpServer.Use(mux.CORSMethodMiddleware(httpServer))
 
-	log.Println("HTTP server ready")
-	err := http.ListenAndServe("localhost:1052", httpServer)
+	addr := os.Getenv("HTTP_ADDRESS") + ":" + os.Getenv("HTTP_PORT")
+	log.Println("HTTP server listening on", color.CyanString(addr))
+	err := http.ListenAndServe(addr, httpServer)
 	if err != nil {
-		panic("ListenAndServe: " + err.Error())
+		log.Panicf("HTTP server fatal error: %s", err.Error())
 	}
 }

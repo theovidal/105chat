@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -12,24 +11,24 @@ import (
 
 // Database is the database used to store static content (messages, rooms, users...).
 // For now it's a SQLite DB, change to MySQL or PostgreSQL is planned
-var Database = openDatabase()
+var Database *gorm.DB
 
-// openDatabase setups the database, and create the file if it doesn't exists
-func openDatabase() *gorm.DB {
-	filename := "testing.sqlite"
+// OpenDatabase setups the database, and create the file if it doesn't exists
+func OpenDatabase() {
+	filename := os.Getenv("DB_FILE")
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		_, err := os.Create(filename)
 		if err != nil {
-			log.Panic(fmt.Sprintf("Error while creating the database : %s", err))
+			log.Fatalf("Error while creating the database: %s", err)
 		}
 	}
 
-	db, err := gorm.Open("sqlite3", filename)
+	var err error
+	Database, err = gorm.Open("sqlite3", filename)
 	if err != nil {
-		log.Panic(fmt.Sprintf("failed to connect database : %s", err))
+		log.Fatalf("Failed to open database: %s", err)
 	}
-	validations.RegisterCallbacks(db)
-
-	return db
+	Database.LogMode(false)
+	validations.RegisterCallbacks(Database)
 }
