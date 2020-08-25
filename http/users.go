@@ -2,9 +2,8 @@ package http
 
 import (
 	"errors"
-	"net/http"
-
 	"github.com/asaskevich/govalidator"
+	"net/http"
 
 	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/http/controllers"
@@ -28,7 +27,7 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	authenticatedUser := r.Context().Value("user").(db.User)
-	if userToUpdate.ID != authenticatedUser.ID {
+	if userToUpdate.ID != authenticatedUser.ID && !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -53,6 +52,40 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		Data:  &userToUpdate,
 	}
 	Response(w, http.StatusNoContent, nil)
+}
+
+func GetGroups(w http.ResponseWriter, _ *http.Request) {
+	var groups []db.Group
+	db.Database.Find(&groups)
+
+	for index, group := range groups {
+		db.AppendRoomPermissions(&group, group.ID)
+		for _, inheritance := range db.FindGroupInheritances(group.ID) {
+			group.Inheritances = append(group.Inheritances, inheritance.ChildGroupID)
+		}
+		groups[index] = group
+	}
+
+	Response(w, http.StatusOK, groups)
+}
+
+func GetUserGroup(w http.ResponseWriter, r *http.Request) {
+	userToFetch, err := ParseUserFromURL(&w, r)
+	if err != nil {
+		return
+	}
+	authenticatedUser := r.Context().Value("user").(db.User)
+
+	if userToFetch.ID != authenticatedUser.ID && !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var group db.Group
+	db.Database.Find(&group, userToFetch.GroupID)
+	db.FetchPermissions(&group, userToFetch.GroupID)
+
+	Response(w, http.StatusOK, &group)
 }
 
 // ParseUserFromURL checks for errors in the passed user ID inside request's URL

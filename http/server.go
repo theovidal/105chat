@@ -22,6 +22,12 @@ var operations = map[string]Methods{
 		"GET":   GetUser,
 		"PATCH": UpdateUserProfile,
 	},
+	"users/{user}/group": {
+		"GET": GetUserGroup,
+	},
+	"groups": {
+		"GET": GetGroups,
+	},
 	"rooms": {
 		"GET": GetRooms,
 	},
@@ -54,7 +60,7 @@ func Server() {
 	httpServer.Use(mux.CORSMethodMiddleware(httpServer))
 
 	addr := os.Getenv("HTTP_ADDRESS") + ":" + os.Getenv("HTTP_PORT")
-	log.Println("HTTP server listening on", color.CyanString(addr))
+	log.Println("HTTP server listening on", color.CyanString("http://"+addr))
 	err := http.ListenAndServe(addr, httpServer)
 	if err != nil {
 		log.Panicf("HTTP server fatal error: %s", err.Error())
