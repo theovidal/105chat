@@ -29,6 +29,6 @@ func OpenDatabase() {
 	if err != nil {
 		log.Fatalf("Failed to open database: %s", err)
 	}
-	Database.LogMode(false)
+	Database.LogMode(os.Getenv("DEBUG") == "on")
 	validations.RegisterCallbacks(Database)
 }
