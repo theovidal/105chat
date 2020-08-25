@@ -63,13 +63,13 @@ func Server(ws *websocket.Conn) {
 						Event: AUTHENTICATION_SUCCESS,
 						Data:  &user,
 					})
+					station.Lock()
+					station.clients[user.ID] = ws
+					station.Unlock()
 					Pipeline <- Event{
 						Event: USER_CONNECT,
 						Data:  user.ID,
 					}
-					station.Lock()
-					station.clients[user.ID] = ws
-					station.Unlock()
 				}
 			} else {
 				websocket.JSON.Send(ws, Event{

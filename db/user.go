@@ -15,6 +15,10 @@ type User struct {
 	// When the user was created (via registration or administrator action)
 	Timestamp int64 `json:"timestamp"`
 
+	GroupID uint `json:"group_id"`
+
+	Group Group `json:"-" gorm:"-"`
+
 	// Email of the user, used to communicate and authenticate
 	Email string `json:"-" gorm:"unique" valid:"required,email"`
 	// Password of the user, used to authenticate
@@ -28,4 +32,16 @@ type User struct {
 func FindUserByToken(token string) (user User, err error) {
 	err = Database.Where("token = ?", token).First(&user).Error
 	return
+}
+
+func (u *User) HasGlobalPermission(permission uint) bool {
+	return u.Group.Permissions&permission != 0
+}
+
+func (u *User) HasRoomPermission(room uint, permission uint) bool {
+	return u.Group.RoomPermissions[room]&permission != 0
+}
+
+func (u *User) HasAnyPermission(room uint, permission uint) bool {
+	return u.HasGlobalPermission(permission) || u.HasRoomPermission(room, permission)
 }

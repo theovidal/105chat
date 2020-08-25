@@ -21,10 +21,20 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !user.HasAnyPermission(room.ID, db.WRITE_MESSAGES) {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
 	var payload MessageCreatePayload
 	if err = ParseBody(r, &payload); err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
+	}
+
+	var announcement bool
+	if user.HasAnyPermission(room.ID, db.SEND_ANNOUNCEMENTS) {
+		announcement = payload.Announcement
 	}
 
 	message := db.Message{
@@ -32,7 +42,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		RoomID:       room.ID,
 		UserID:       user.ID,
 		Content:      govalidator.Trim(payload.Content, ""),
-		Announcement: payload.Announcement,
+		Announcement: announcement,
 		Private:      false,
 		Timestamp:    time.Now().Unix(),
 	}
@@ -57,6 +67,13 @@ func GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := r.Context().Value("user").(db.User)
+	fmt.Println(user.Group)
+	if !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
 	var messages []db.Message
 	query := fmt.Sprintf("room_id = %d", room.ID)
 	if before := r.URL.Query().Get("before"); before != "" {
@@ -76,6 +93,13 @@ func GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+
+	user := r.Context().Value("user").(db.User)
+	if !user.HasAnyPermission(message.RoomID, db.READ_MESSAGES) {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
 	Response(w, http.StatusOK, message)
 }
 
@@ -87,7 +111,7 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if message.UserID != user.ID {
+	if message.UserID != user.ID || !user.HasAnyPermission(message.RoomID, db.WRITE_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -120,7 +144,7 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if message.UserID != user.ID {
+	if message.UserID != user.ID && !user.HasAnyPermission(message.RoomID, db.MANAGE_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}

@@ -9,9 +9,22 @@ import (
 )
 
 // GetRooms returns all the rooms the user has access to
-func GetRooms(w http.ResponseWriter, _ *http.Request) {
+func GetRooms(w http.ResponseWriter, r *http.Request) {
 	var rooms []db.Room
-	db.Database.Find(&rooms)
+
+	user := r.Context().Value("user").(db.User)
+	if user.HasGlobalPermission(db.READ_MESSAGES) {
+		db.Database.Find(&rooms)
+	} else {
+		var accessibleRooms []uint
+		for id := range user.Group.RoomPermissions {
+			if user.HasRoomPermission(id, db.READ_MESSAGES) {
+				accessibleRooms = append(accessibleRooms, id)
+			}
+		}
+		db.Database.Where(accessibleRooms).Find(&rooms)
+	}
+
 	Response(w, http.StatusOK, rooms)
 }
 
@@ -19,6 +32,12 @@ func GetRooms(w http.ResponseWriter, _ *http.Request) {
 func GetRoom(w http.ResponseWriter, r *http.Request) {
 	room, err := ParseRoomFromURL(&w, r)
 	if err != nil {
+		return
+	}
+
+	user := r.Context().Value("user").(db.User)
+	if !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
+		Response(w, http.StatusForbidden, nil)
 		return
 	}
 

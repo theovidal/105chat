@@ -71,9 +71,9 @@ func main() {
 }
 
 func Help(_ []string) {
-	fmt.Println("───── 105chat CLI help ─────\n")
+	println("───── 105chat CLI help ─────\n")
 
-	fmt.Println("COMMANDS")
+	println("COMMANDS")
 	for _, command := range commands {
 		fmt.Println(command.String())
 	}
@@ -89,7 +89,7 @@ func Run(_ []string) {
 	go httpServer.Server()
 
 	addr := os.Getenv("WS_ADDRESS") + ":" + os.Getenv("WS_PORT")
-	log.Println("WS server listening on", color.CyanString(addr))
+	log.Println("WS server listening on", color.CyanString("ws://"+addr))
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Panicf("WS server fatal error: %s", err.Error())
@@ -97,7 +97,8 @@ func Run(_ []string) {
 }
 
 func Migrate(_ []string) {
+	db.OpenDatabase()
 	log.Println("Database migration started")
-	db.Database.AutoMigrate(&db.User{}, &db.Message{}, &db.Room{})
+	db.Database.AutoMigrate(&db.User{}, &db.Message{}, &db.Room{}, &db.Group{}, &db.RoomPermission{}, &db.GroupInheritance{})
 	log.Println("Database migration complete")
 }
