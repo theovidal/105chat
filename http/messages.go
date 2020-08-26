@@ -10,6 +10,7 @@ import (
 
 	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/http/controllers"
+	"github.com/theovidal/105chat/utils"
 	"github.com/theovidal/105chat/ws"
 )
 
@@ -38,7 +39,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := db.Message{
-		ID:           uint(node.Generate()),
+		ID:           utils.GenerateSnowflake(),
 		RoomID:       room.ID,
 		UserID:       user.ID,
 		Content:      govalidator.Trim(payload.Content, ""),
@@ -57,7 +58,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		Data:  &message,
 	}
 
-	Response(w, http.StatusCreated, nil)
+	Response(w, http.StatusCreated, &message)
 }
 
 // GetRoomMessages returns up to 25 messages in a specific room
@@ -151,7 +152,7 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 
 	ws.Pipeline <- ws.Event{
 		Event: ws.MESSAGE_DELETE,
-		Data: ws.H{
+		Data: utils.H{
 			"id":      message.ID,
 			"room_id": message.RoomID,
 		},

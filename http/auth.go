@@ -5,7 +5,7 @@ import (
 
 	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/http/controllers"
-	"github.com/theovidal/105chat/ws"
+	"github.com/theovidal/105chat/utils"
 )
 
 func Authenticate(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func Authenticate(w http.ResponseWriter, r *http.Request) {
 
 	if controllers.ComparePasswords(payload.Password, user.Password) {
 		w.Header().Set("Cache-Control", "private")
-		Response(w, http.StatusOK, ws.H{
+		Response(w, http.StatusOK, utils.H{
 			"token": user.Token,
 		})
 	} else {
