@@ -40,10 +40,13 @@ var operations = map[string]Methods{
 		"DELETE": DeleteGroup,
 	},
 	"rooms": {
-		"GET": GetRooms,
+		"GET":  GetRooms,
+		"POST": CreateRoom,
 	},
 	"rooms/{room}": {
-		"GET": GetRoom,
+		"GET":    GetRoom,
+		"PATCH":  UpdateRoom,
+		"DELETE": DeleteRoom,
 	},
 	"rooms/{room}/messages": {
 		"GET":  GetRoomMessages,
@@ -71,8 +74,8 @@ func Server() {
 	httpServer.Use(mux.CORSMethodMiddleware(httpServer))
 
 	addr := os.Getenv("HTTP_ADDRESS") + ":" + os.Getenv("HTTP_PORT")
-	log.Println("HTTP server listening on", color.CyanString("http://"+addr))
+	log.Println("▶ HTTP server listening on", color.CyanString("http://"+addr))
 	if err := http.ListenAndServe(addr, httpServer); err != nil {
-		log.Panicf("HTTP server fatal error: %s", err.Error())
+		log.Panicf("‼ HTTP server fatal error: %s", err.Error())
 	}
 }

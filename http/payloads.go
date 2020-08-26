@@ -39,6 +39,14 @@ type GroupDeletePayload struct {
 	FallbackGroupID uint `json:"fallback_group_id"`
 }
 
+// RoomPayload is sent to create or update a room
+type RoomPayload struct {
+	Name        string
+	AvatarURL   string `json:"avatar_url"`
+	Description string
+	Color       uint
+}
+
 // MessageCreatePayload is sent to create a message in a room
 type MessageCreatePayload struct {
 	Content      string
