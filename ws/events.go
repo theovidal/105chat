@@ -4,7 +4,7 @@ package ws
 type Event struct {
 	// The type of the event, as defined in the constants below
 	Event string `json:"event"`
-	// The data related to the event (message, rooom, user...)
+	// The data related to the event (message, room, user...)
 	Data interface{} `json:"data,omitempty"`
 }
 
@@ -25,10 +25,15 @@ const (
 	MESSAGE_UPDATE = "MESSAGE_UPDATE"
 	MESSAGE_DELETE = "MESSAGE_DELETE"
 
-	USER_UPDATE         = "USER_UPDATE"
-	USER_PROFILE_UPDATE = "USER_PROFILE_UPDATE"
-	USER_CONNECT        = "USER_CONNECT"
-	USER_DISCONNECT     = "USER_DISCONNECT"
+	USER_CREATE     = "USER_CREATE"
+	USER_UPDATE     = "USER_UPDATE"
+	USER_CONNECT    = "USER_CONNECT"
+	USER_DISCONNECT = "USER_DISCONNECT"
+	USER_DELETE     = "USER_DELETE"
+
+	GROUP_CREATE = "GROUP_CREATE"
+	GROUP_UPDATE = "GROUP_UPDATE"
+	GROUP_DELETE = "GROUP_DELETE"
 )
 
 // Error represents an error in event processing

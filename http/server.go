@@ -31,10 +31,11 @@ var operations = map[string]Methods{
 		"PATCH": UpdateUserGroup,
 	},
 	"groups": {
-		"GET": GetGroups,
+		"GET":  GetGroups,
+		"POST": CreateGroup,
 	},
 	"groups/{group}": {
-		"POST":   CreateGroup,
+		"GET":    GetGroup,
 		"PATCH":  UpdateGroup,
 		"DELETE": DeleteGroup,
 	},

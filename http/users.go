@@ -41,14 +41,13 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	payload.Name = govalidator.Trim(payload.Name, "")
 	payload.AvatarURL = govalidator.Trim(payload.AvatarURL, "")
 	payload.Description = govalidator.Trim(payload.Description, "")
-	err = db.Database.Model(userToUpdate).Updates(payload).Error
-	if err != nil {
+	if err = db.Database.Model(userToUpdate).Updates(payload).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
 	ws.Pipeline <- ws.Event{
-		Event: ws.USER_PROFILE_UPDATE,
+		Event: ws.USER_UPDATE,
 		Data:  &userToUpdate,
 	}
 	Response(w, http.StatusNoContent, nil)
@@ -73,7 +72,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	userToUpdate.Muted = payload.Muted
 	userToUpdate.Disabled = payload.Disabled
-	db.Database.Save(&userToUpdate)
+	db.Database.Model(&userToUpdate).Updates(payload)
+
+	ws.Pipeline <- ws.Event{
+		Event: ws.USER_UPDATE,
+		Data:  &userToUpdate,
+	}
 	Response(w, http.StatusNoContent, nil)
 }
 
@@ -94,6 +98,40 @@ func GetUserGroup(w http.ResponseWriter, r *http.Request) {
 	db.FetchPermissions(&group, userToFetch.GroupID)
 
 	Response(w, http.StatusOK, &group)
+}
+
+func UpdateUserGroup(w http.ResponseWriter, r *http.Request) {
+	userToUpdate, err := ParseUserFromURL(&w, r)
+	if err != nil {
+		return
+	}
+	authenticatedUser := r.Context().Value("user").(db.User)
+
+	if !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
+		Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var payload UserGroupUpdatePayload
+	if err = ParseBody(r, &payload); err != nil {
+		Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	var group db.Group
+	if err = db.Database.Find(&group, payload.GroupID).Error; err != nil {
+		Response(w, http.StatusNotFound, nil)
+		return
+	}
+
+	userToUpdate.GroupID = group.ID
+	db.Database.Save(&userToUpdate)
+
+	ws.Pipeline <- ws.Event{
+		Event: ws.USER_UPDATE,
+		Data:  &userToUpdate,
+	}
+	Response(w, http.StatusNoContent, nil)
 }
 
 // ParseUserFromURL checks for errors in the passed user ID inside request's URL
