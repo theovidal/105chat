@@ -54,19 +54,27 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	Response(w, http.StatusNoContent, nil)
 }
 
-func GetGroups(w http.ResponseWriter, _ *http.Request) {
-	var groups []db.Group
-	db.Database.Find(&groups)
-
-	for index, group := range groups {
-		db.AppendRoomPermissions(&group, group.ID)
-		for _, inheritance := range db.FindGroupInheritances(group.ID) {
-			group.Inheritances = append(group.Inheritances, inheritance.ChildGroupID)
-		}
-		groups[index] = group
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	userToUpdate, err := ParseUserFromURL(&w, r)
+	if err != nil {
+		return
+	}
+	authenticatedUser := r.Context().Value("user").(db.User)
+	if !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
+		Response(w, http.StatusForbidden, nil)
+		return
 	}
 
-	Response(w, http.StatusOK, groups)
+	var payload UserUpdatePayload
+	if err = ParseBody(r, &payload); err != nil {
+		Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	userToUpdate.Muted = payload.Muted
+	userToUpdate.Disabled = payload.Disabled
+	db.Database.Save(&userToUpdate)
+	Response(w, http.StatusNoContent, nil)
 }
 
 func GetUserGroup(w http.ResponseWriter, r *http.Request) {

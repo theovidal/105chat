@@ -59,6 +59,13 @@ func Server(ws *websocket.Conn) {
 					})
 					trials += 1
 				} else {
+					if user.Disabled {
+						websocket.JSON.Send(ws, Event{
+							Event: ERROR,
+							Data:  ERROR405,
+						})
+						ws.Close()
+					}
 					websocket.JSON.Send(ws, Event{
 						Event: AUTHENTICATION_SUCCESS,
 						Data:  &user,

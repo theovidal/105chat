@@ -30,8 +30,7 @@ func (c *Command) String() string {
 var commands = make(map[string]Command)
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file at the root - Ignoring")
 	}
 
@@ -90,8 +89,7 @@ func Run(_ []string) {
 
 	addr := os.Getenv("WS_ADDRESS") + ":" + os.Getenv("WS_PORT")
 	log.Println("WS server listening on", color.CyanString("ws://"+addr))
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Panicf("WS server fatal error: %s", err.Error())
 	}
 }

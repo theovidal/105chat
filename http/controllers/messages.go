@@ -18,8 +18,7 @@ func FindMessageFromURL(r *http.Request) (*db.Message, error) {
 	}
 
 	var message db.Message
-	err = db.Database.Where("id = ? AND room_id = ?", messageID, roomID).Find(&message).Error
-	if err != nil {
+	if err = db.Database.Where("id = ? AND room_id = ?", messageID, roomID).Find(&message).Error; err != nil {
 		return &db.Message{}, UnknownMessage
 	}
 

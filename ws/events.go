@@ -46,6 +46,7 @@ var (
 	ERROR402 = Error{402, "Invalid event data"}
 	ERROR403 = Error{403, "You don't have the permission to send this event"}
 	ERROR404 = Error{404, "Unknown event"}
+	ERROR405 = Error{405, "A moderator disabled your account. Contact the moderation team to know further details"}
 
 	ERROR500 = Error{400, "Unknown server error"}
 )

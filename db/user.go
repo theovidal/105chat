@@ -19,6 +19,10 @@ type User struct {
 
 	Group Group `json:"-" gorm:"-"`
 
+	Muted bool `json:"muted"`
+
+	Disabled bool `json:"disabled"`
+
 	// Email of the user, used to communicate and authenticate
 	Email string `json:"-" gorm:"unique" valid:"required,email"`
 	// Password of the user, used to authenticate

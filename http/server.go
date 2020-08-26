@@ -24,12 +24,19 @@ var operations = map[string]Methods{
 	"users/{user}": {
 		"GET":   GetUser,
 		"PATCH": UpdateUserProfile,
+		"PUT":   UpdateUser,
 	},
 	"users/{user}/group": {
-		"GET": GetUserGroup,
+		"GET":   GetUserGroup,
+		"PATCH": UpdateUserGroup,
 	},
 	"groups": {
 		"GET": GetGroups,
+	},
+	"groups/{group}": {
+		"POST":   CreateGroup,
+		"PATCH":  UpdateGroup,
+		"DELETE": DeleteGroup,
 	},
 	"rooms": {
 		"GET": GetRooms,
@@ -64,8 +71,7 @@ func Server() {
 
 	addr := os.Getenv("HTTP_ADDRESS") + ":" + os.Getenv("HTTP_PORT")
 	log.Println("HTTP server listening on", color.CyanString("http://"+addr))
-	err := http.ListenAndServe(addr, httpServer)
-	if err != nil {
+	if err := http.ListenAndServe(addr, httpServer); err != nil {
 		log.Panicf("HTTP server fatal error: %s", err.Error())
 	}
 }

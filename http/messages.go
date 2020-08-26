@@ -21,7 +21,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !user.HasAnyPermission(room.ID, db.WRITE_MESSAGES) {
+	if !user.HasAnyPermission(room.ID, db.WRITE_MESSAGES) || user.Muted {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -94,8 +94,7 @@ func GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("user").(db.User)
-	if !user.HasAnyPermission(message.RoomID, db.READ_MESSAGES) {
+	if user := r.Context().Value("user").(db.User); !user.HasAnyPermission(message.RoomID, db.READ_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -105,13 +104,13 @@ func GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 
 // UpdateRoomMessage is used by a user to edit one of their message
 func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(db.User)
 	message, err := ParseMessageFromURL(&w, r)
 	if err != nil {
 		return
 	}
 
-	if message.UserID != user.ID || !user.HasAnyPermission(message.RoomID, db.WRITE_MESSAGES) {
+	user := r.Context().Value("user").(db.User)
+	if (message.UserID != user.ID || !user.HasAnyPermission(message.RoomID, db.WRITE_MESSAGES)) || user.Muted {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -123,8 +122,7 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload.Content = govalidator.Trim(payload.Content, "")
-	err = db.Database.Model(message).Updates(payload).Error
-	if err != nil {
+	if err = db.Database.Model(message).Updates(payload).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -138,12 +136,12 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 
 // UpdateRoomMessage is used by a user to delete one of their message
 func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(db.User)
 	message, err := ParseMessageFromURL(&w, r)
 	if err != nil {
 		return
 	}
 
+	user := r.Context().Value("user").(db.User)
 	if message.UserID != user.ID && !user.HasAnyPermission(message.RoomID, db.MANAGE_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return

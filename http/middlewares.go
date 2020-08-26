@@ -17,9 +17,13 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 		}
 
 		if user, err := controllers.FindUserFromRequest(r); err == nil {
-			db.FetchPermissions(&user.Group, user.GroupID)
-			userContext := context.WithValue(r.Context(), "user", user)
-			next.ServeHTTP(w, r.WithContext(userContext))
+			if user.Disabled {
+				Response(w, http.StatusForbidden, nil)
+			} else {
+				db.FetchPermissions(&user.Group, user.GroupID)
+				userContext := context.WithValue(r.Context(), "user", user)
+				next.ServeHTTP(w, r.WithContext(userContext))
+			}
 		} else {
 			Response(w, http.StatusUnauthorized, nil)
 		}

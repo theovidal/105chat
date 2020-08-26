@@ -16,14 +16,12 @@ func Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user db.User
-	err := db.Database.Where("email = ?", payload.Email).Find(&user).Error
-	if err != nil {
+	if err := db.Database.Where("email = ?", payload.Email).Find(&user).Error; err != nil {
 		Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	match := controllers.ComparePasswords(payload.Password, user.Password)
-	if match {
+	if controllers.ComparePasswords(payload.Password, user.Password) {
 		w.Header().Set("Cache-Control", "private")
 		Response(w, http.StatusOK, ws.H{
 			"token": user.Token,
