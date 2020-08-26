@@ -11,6 +11,11 @@ import (
 // AuthenticationMiddleware checks that user is authenticated before doing a request
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ignoring for this endpoint - We need it to get our access token
+		if r.URL.Path == "/v1/http/auth" {
+			next.ServeHTTP(w, r)
+		}
+
 		if user, err := controllers.FindUserFromRequest(r); err == nil {
 			db.FetchPermissions(&user.Group, user.GroupID)
 			userContext := context.WithValue(r.Context(), "user", user)

@@ -1,5 +1,10 @@
 package http
 
+type AuthenticatePayload struct {
+	Email    string
+	Password string
+}
+
 // MessageCreatePayload is sent to create a message in a room
 type MessageCreatePayload struct {
 	Content      string

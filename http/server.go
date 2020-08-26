@@ -18,6 +18,9 @@ type Operation func(w http.ResponseWriter, r *http.Request)
 
 // operations contains a list of available endpoints on the API with their method
 var operations = map[string]Methods{
+	"auth": {
+		"POST": Authenticate,
+	},
 	"users/{user}": {
 		"GET":   GetUser,
 		"PATCH": UpdateUserProfile,
