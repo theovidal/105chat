@@ -24,6 +24,8 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	payload.Name = govalidator.Trim(payload.Name, "")
+	payload.Description = govalidator.Trim(payload.Description, "")
 	room := db.Room{
 		ID:          utils.GenerateSnowflake(),
 		Name:        payload.Name,
@@ -120,7 +122,6 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
-	db.Database.Delete(&room)
 
 	remaining := utils.H{
 		"id": room.ID,
@@ -129,7 +130,10 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		Event: ws.ROOM_DELETE,
 		Data:  &remaining,
 	}
-	Response(w, http.StatusOK, &remaining)
+	Response(w, http.StatusAccepted, &remaining)
+
+	db.Database.Delete(&room)
+	db.Database.Where("room_id = ?", room.ID).Delete(&db.Message{})
 }
 
 // ParseRoomFromURL checks for errors in the passed room ID inside request's URL
