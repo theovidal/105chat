@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/fatih/color"
 	"github.com/gorilla/mux"
+
+	"github.com/theovidal/105chat/utils"
 )
 
 // Methods is a shortcut that stores a list of operations
@@ -73,7 +74,7 @@ func Server() {
 	httpServer.Use(AuthenticationMiddleware)
 	httpServer.Use(mux.CORSMethodMiddleware(httpServer))
 
-	addr := os.Getenv("HTTP_ADDRESS") + ":" + os.Getenv("HTTP_PORT")
+	addr := utils.GenerateAddress("HTTP")
 	log.Println("▶ HTTP server listening on", color.CyanString("http://"+addr))
 	if err := http.ListenAndServe(addr, httpServer); err != nil {
 		log.Panicf("‼ HTTP server fatal error: %s", err.Error())

@@ -1,5 +1,7 @@
 package db
 
+import "github.com/theovidal/105chat/cache"
+
 // User represents a user of 105chat, who communicates to others via messages in rooms.
 type User struct {
 	// Identifier of the user, Twitter snowflake
@@ -14,13 +16,13 @@ type User struct {
 	Color uint `json:"color" valid:"range(0|16777215)"`
 	// When the user was created (via registration or administrator action)
 	Timestamp int64 `json:"timestamp"`
-
+	// Identifier of user's group, Twitter snowflake
 	GroupID uint `json:"group_id"`
-
+	// Entity of user's group, used in the code for a better simplicity
 	Group Group `json:"-" gorm:"-"`
-
+	// Whether the user is muted by a moderator
 	Muted bool `json:"muted"`
-
+	// Whether the user is disabled by a moderator
 	Disabled bool `json:"disabled"`
 
 	// Email of the user, used to communicate and authenticate
@@ -34,16 +36,16 @@ type User struct {
 
 // FindUserByToken searches for a user with a specific token
 func FindUserByToken(token string) (user User, err error) {
-	err = Database.Where("token = ?", token).First(&user).Error
+	err = Client.Where("token = ?", token).First(&user).Error
 	return
 }
 
 func (u *User) HasGlobalPermission(permission uint) bool {
-	return u.Group.Permissions&permission != 0
+	return cache.GetGroupPermissions(u.GroupID)&permission != 0
 }
 
 func (u *User) HasRoomPermission(room uint, permission uint) bool {
-	return u.Group.RoomPermissions[room]&permission != 0
+	return cache.GetGroupRoomPermissions(u.GroupID, room)&permission != 0
 }
 
 func (u *User) HasAnyPermission(room uint, permission uint) bool {

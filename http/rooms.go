@@ -6,6 +6,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 
+	"github.com/theovidal/105chat/cache"
 	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/http/controllers"
 	"github.com/theovidal/105chat/utils"
@@ -34,7 +35,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Color:       payload.Color,
 		Timestamp:   utils.Now(),
 	}
-	err := db.Database.Create(&room).Error
+	err := db.Client.Create(&room).Error
 	if err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
@@ -52,15 +53,15 @@ func GetRooms(w http.ResponseWriter, r *http.Request) {
 	var rooms []db.Room
 
 	if user := r.Context().Value("user").(*db.User); user.HasGlobalPermission(db.READ_MESSAGES) {
-		db.Database.Find(&rooms)
+		db.Client.Find(&rooms)
 	} else {
 		var accessibleRooms []uint
-		for id := range user.Group.RoomPermissions {
-			if user.HasRoomPermission(id, db.READ_MESSAGES) {
+		for id, permission := range cache.GetAllGroupRoomPermissions(user.GroupID) {
+			if permission&db.READ_MESSAGES != 0 {
 				accessibleRooms = append(accessibleRooms, id)
 			}
 		}
-		db.Database.Where(accessibleRooms).Find(&rooms)
+		db.Client.Where(accessibleRooms).Find(&rooms)
 	}
 
 	Response(w, http.StatusOK, rooms)
@@ -100,7 +101,7 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request) {
 
 	payload.Name = govalidator.Trim(payload.Name, "")
 	payload.Description = govalidator.Trim(payload.Description, "")
-	if err = db.Database.Model(room).Updates(payload).Error; err != nil {
+	if err = db.Client.Model(room).Updates(payload).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -132,8 +133,8 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	Response(w, http.StatusAccepted, &remaining)
 
-	db.Database.Delete(&room)
-	db.Database.Where("room_id = ?", room.ID).Delete(&db.Message{})
+	db.Client.Delete(&room)
+	db.Client.Where("room_id = ?", room.ID).Delete(&db.Message{})
 }
 
 // ParseRoomFromURL checks for errors in the passed room ID inside request's URL

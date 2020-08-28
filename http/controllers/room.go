@@ -14,7 +14,7 @@ func FindRoomFromURL(r *http.Request) (*db.Room, error) {
 	}
 
 	var room db.Room
-	if err = db.Database.First(&room, roomID).Error; err != nil {
+	if err = db.Client.First(&room, roomID).Error; err != nil {
 		return &db.Room{}, UnknownRoom
 	}
 

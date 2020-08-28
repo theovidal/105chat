@@ -1,5 +1,7 @@
 package db
 
+import "github.com/theovidal/105chat/cache"
+
 // Constants corresponding to bitwise permissions
 const (
 	READ_MESSAGES      = 1
@@ -22,16 +24,16 @@ type Group struct {
 	Color uint `json:"color" valid:"range(0|16777215)"`
 	// Global permissions the group has
 	Permissions uint `json:"permissions"`
-	// Permissions specific to rooms
+	// Permissions specific to rooms (used internally)
 	RoomPermissions map[uint]uint `json:"room_permissions" gorm:"-"`
-	// All the groups this group inherit from
+	// All the groups this group inherit from (used internally)
 	Inheritances []uint `json:"inheritances,omitempty" gorm:"-"`
 }
 
 // FetchPermissions fetches all the permissions of the group by descending inheritance
 func FetchPermissions(group *Group, id uint) {
 	var groupToMerge Group
-	Database.First(&groupToMerge, id)
+	Client.First(&groupToMerge, id)
 	group.Permissions |= groupToMerge.Permissions
 
 	AppendRoomPermissions(group, groupToMerge.ID)
@@ -40,4 +42,21 @@ func FetchPermissions(group *Group, id uint) {
 	}
 
 	group.ID = id
+}
+
+func SetAllGroupsCache() {
+	var groups []Group
+	Client.Find(&groups)
+
+	for _, group := range groups {
+		SetGroupCache(&group)
+	}
+}
+
+func SetGroupCache(group *Group) {
+	FetchPermissions(group, group.ID)
+	cache.SetGroupPermissions(group.ID, group.Permissions)
+	for room, permissions := range group.RoomPermissions {
+		cache.SetGroupRoomPermissions(group.ID, room, permissions)
+	}
 }

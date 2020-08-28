@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/ws"
 )
 
@@ -21,7 +20,6 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 			if user.Disabled {
 				Response(w, http.StatusForbidden, nil)
 			} else {
-				db.FetchPermissions(&user.Group, user.GroupID)
 				userContext := context.WithValue(r.Context(), "user", user)
 				next.ServeHTTP(w, r.WithContext(userContext))
 			}

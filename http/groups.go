@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"github.com/theovidal/105chat/cache"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
@@ -30,10 +31,11 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		Name:  payload.Name,
 		Color: payload.Color,
 	}
-	err := db.Database.Create(&group).Error
+	err := db.Client.Create(&group).Error
 	if err != nil {
 		Response(w, http.StatusBadRequest, nil)
 	}
+	db.SetGroupCache(&group)
 
 	var errorsList []utils.Error
 	errorsList = append(errorsList, controllers.UpdateGroupRoomPermissions(&group, payload.RoomPermissions)...)
@@ -60,7 +62,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 // GetGroups returns all the available groups
 func GetGroups(w http.ResponseWriter, _ *http.Request) {
 	var groups []db.Group
-	db.Database.Find(&groups)
+	db.Client.Find(&groups)
 
 	for index, group := range groups {
 		db.AppendRoomPermissions(&group, group.ID)
@@ -108,7 +110,7 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	errorsList = append(errorsList, controllers.UpdateGroupInheritances(group, payload.Inheritances)...)
 
 	payload.Name = govalidator.Trim(payload.Name, "")
-	if err = db.Database.Model(&group).Updates(payload).Error; err != nil {
+	if err = db.Client.Model(&group).Updates(payload).Error; err != nil {
 		errorsList = append(errorsList, utils.Error{
 			Key:     "dataError",
 			Message: err.Error(),
@@ -131,6 +133,8 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		"id":     group.ID,
 		"errors": errorsList,
 	})
+
+	db.SetAllGroupsCache()
 }
 
 // DeleteGroup deletes a group and assigns its users to a fallback group
@@ -152,7 +156,7 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var count int
-	db.Database.First(&db.Group{}, payload.FallbackGroupID).Count(&count)
+	db.Client.First(&db.Group{}, payload.FallbackGroupID).Count(&count)
 	if count != 1 {
 		Response(w, http.StatusBadRequest, nil)
 		return
@@ -170,11 +174,16 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	Response(w, http.StatusAccepted, &remainingData)
 
 	var usersToUpdate []db.User
-	db.Database.Where("group_id = ?", group.ID).Find(&usersToUpdate)
+	db.Client.Where("group_id = ?", group.ID).Find(&usersToUpdate)
 	for _, user := range usersToUpdate {
 		user.GroupID = payload.FallbackGroupID
-		db.Database.Save(&user)
+		db.Client.Save(&user)
 	}
+	db.SetAllGroupsCache()
+	db.Client.Delete(&group)
+	db.Client.Where("group_id = ?", group.ID).Delete(&db.RoomPermission{})
+	db.Client.Where("child_group_id = ? OR parent_group_id = ?", group.ID, group.ID).Delete(&db.GroupInheritance{})
+	cache.RemoveGroupCache(group.ID)
 }
 
 // ParseGroupFromURL checks for errors in the passed group ID inside request's URL

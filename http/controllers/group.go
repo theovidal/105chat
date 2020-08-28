@@ -16,17 +16,18 @@ func FindGroupFromURL(r *http.Request) (*db.Group, error) {
 	}
 
 	var group db.Group
-	if err = db.Database.First(&group, groupID).Error; err != nil {
+	if err = db.Client.First(&group, groupID).Error; err != nil {
 		return &db.Group{}, UnknownRoom
 	}
 
 	return &group, nil
 }
 
+// UpdateGroupRoomPermissions updates room permissions of a group inside the database
 func UpdateGroupRoomPermissions(group *db.Group, roomPermissions map[uint]uint) (errorsList []utils.Error) {
 	for roomID, newPermissions := range roomPermissions {
 		var count int
-		db.Database.First(&db.Room{}, roomID).Count(&count)
+		db.Client.First(&db.Room{}, roomID).Count(&count)
 		if count != 1 {
 			errorsList = append(errorsList, utils.Error{
 				Key:     fmt.Sprint("roomPermissions.unknownRoom.", roomID),
@@ -39,9 +40,9 @@ func UpdateGroupRoomPermissions(group *db.Group, roomPermissions map[uint]uint) 
 		if exists {
 			if actualPermissions != newPermissions {
 				var roomPermission db.RoomPermission
-				db.Database.Where("group_id = ? AND room_id = ?", group.ID, roomID).Find(&roomPermission)
+				db.Client.Where("group_id = ? AND room_id = ?", group.ID, roomID).Find(&roomPermission)
 				roomPermission.Permissions = newPermissions
-				db.Database.Save(&roomPermission)
+				db.Client.Save(&roomPermission)
 			}
 		} else {
 			roomPermission := db.RoomPermission{
@@ -50,13 +51,13 @@ func UpdateGroupRoomPermissions(group *db.Group, roomPermissions map[uint]uint) 
 				GroupID:     group.ID,
 				Permissions: newPermissions,
 			}
-			db.Database.Create(&roomPermission)
+			db.Client.Create(&roomPermission)
 		}
 		delete(group.RoomPermissions, roomID)
 	}
 	// Reminding permissions are to delete
 	for roomID := range group.RoomPermissions {
-		db.Database.Where(
+		db.Client.Where(
 			"group_id = ? AND room_id = ?",
 			group.ID,
 			roomID,
@@ -66,6 +67,7 @@ func UpdateGroupRoomPermissions(group *db.Group, roomPermissions map[uint]uint) 
 	return
 }
 
+// UpdateGroupInheritances updates inheritances of a group inside the database
 func UpdateGroupInheritances(group *db.Group, inheritances []uint) (errorsList []utils.Error) {
 	for _, childGroupID := range inheritances {
 		if childGroupID == group.ID {
@@ -77,7 +79,7 @@ func UpdateGroupInheritances(group *db.Group, inheritances []uint) (errorsList [
 		}
 
 		var count int
-		if db.Database.First(&db.Group{}, childGroupID).Count(&count); count != 1 {
+		if db.Client.First(&db.Group{}, childGroupID).Count(&count); count != 1 {
 			errorsList = append(errorsList, utils.Error{
 				Key:     fmt.Sprint("inheritance.unknownGroup.", childGroupID),
 				Message: fmt.Sprint("Unknown group with ID ", childGroupID),
@@ -90,12 +92,12 @@ func UpdateGroupInheritances(group *db.Group, inheritances []uint) (errorsList [
 				ParentGroupID: group.ID,
 				ChildGroupID:  childGroupID,
 			}
-			db.Database.Create(&inheritance)
+			db.Client.Create(&inheritance)
 		}
 	}
 	for _, childGroupID := range group.Inheritances {
 		if !utils.Contains(inheritances, childGroupID) {
-			db.Database.Where(
+			db.Client.Where(
 				"parent_group_id = ? AND child_group_id = ?",
 				group.ID,
 				childGroupID,
