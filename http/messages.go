@@ -42,7 +42,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		Timestamp:    utils.Now(),
 	}
 
-	if err = db.Database.Create(&message).Error; err != nil {
+	if err = db.Client.Create(&message).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -63,7 +63,6 @@ func GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := r.Context().Value("user").(*db.User)
-	fmt.Println(user.Group)
 	if !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
@@ -77,7 +76,7 @@ func GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 	if after := r.URL.Query().Get("after"); after != "" {
 		query += fmt.Sprintf(" AND id > %s", after)
 	}
-	db.Database.Order("id desc").Where(query).Limit(25).Find(&messages)
+	db.Client.Order("id desc").Where(query).Limit(25).Find(&messages)
 
 	Response(w, http.StatusOK, messages)
 }
@@ -117,7 +116,7 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload.Content = govalidator.Trim(payload.Content, "")
-	if err = db.Database.Model(message).Updates(payload).Error; err != nil {
+	if err = db.Client.Model(message).Updates(payload).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -142,7 +141,7 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db.Database.Delete(message)
+	db.Client.Delete(message)
 	remainingData := utils.H{
 		"id":      message.ID,
 		"room_id": message.RoomID,

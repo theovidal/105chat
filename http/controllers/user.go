@@ -14,7 +14,7 @@ func FindUserFromURL(r *http.Request) (*db.User, error) {
 	}
 
 	var user db.User
-	if err = db.Database.First(&user, userID).Error; err != nil {
+	if err = db.Client.First(&user, userID).Error; err != nil {
 		return &db.User{}, UnknownUser
 	}
 

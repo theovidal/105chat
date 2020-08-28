@@ -9,9 +9,9 @@ import (
 	"github.com/qor/validations"
 )
 
-// Database is the database used to store static content (messages, rooms, users...).
+// Client is the database used to store static content (messages, rooms, users...).
 // For now it's a SQLite DB, change to MySQL or PostgreSQL is planned
-var Database *gorm.DB
+var Client *gorm.DB
 
 // OpenDatabase setups the database, and create the file if it doesn't exists
 func OpenDatabase() {
@@ -25,10 +25,10 @@ func OpenDatabase() {
 	}
 
 	var err error
-	Database, err = gorm.Open("sqlite3", filename)
+	Client, err = gorm.Open("sqlite3", filename)
 	if err != nil {
 		log.Fatalf("Failed to open database: %s", err)
 	}
-	Database.LogMode(os.Getenv("DEBUG") == "on")
-	validations.RegisterCallbacks(Database)
+	Client.LogMode(os.Getenv("DEBUG") == "on")
+	validations.RegisterCallbacks(Client)
 }

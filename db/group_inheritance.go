@@ -13,7 +13,7 @@ type GroupInheritance struct {
 
 // FindGroupInheritances returns all the inheritances of a group
 func FindGroupInheritances(group uint) (inheritances []GroupInheritance) {
-	Database.Where("parent_group_id = ?", group).Find(&inheritances)
+	Client.Where("parent_group_id = ?", group).Find(&inheritances)
 	return
 }
 

@@ -2,8 +2,9 @@ package http
 
 import (
 	"errors"
-	"github.com/asaskevich/govalidator"
 	"net/http"
+
+	"github.com/asaskevich/govalidator"
 
 	"github.com/theovidal/105chat/db"
 	"github.com/theovidal/105chat/http/controllers"
@@ -41,7 +42,7 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	payload.Name = govalidator.Trim(payload.Name, "")
 	payload.AvatarURL = govalidator.Trim(payload.AvatarURL, "")
 	payload.Description = govalidator.Trim(payload.Description, "")
-	if err = db.Database.Model(userToUpdate).Updates(payload).Error; err != nil {
+	if err = db.Client.Model(userToUpdate).Updates(payload).Error; err != nil {
 		Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -73,7 +74,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	userToUpdate.Muted = payload.Muted
 	userToUpdate.Disabled = payload.Disabled
-	db.Database.Model(&userToUpdate).Updates(payload)
+	db.Client.Model(&userToUpdate).Updates(payload)
 
 	ws.Pipeline <- ws.Event{
 		Event: ws.USER_UPDATE,
@@ -96,7 +97,7 @@ func GetUserGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var group db.Group
-	db.Database.Find(&group, userToFetch.GroupID)
+	db.Client.Find(&group, userToFetch.GroupID)
 	db.FetchPermissions(&group, userToFetch.GroupID)
 
 	Response(w, http.StatusOK, &group)
@@ -121,13 +122,13 @@ func UpdateUserGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var group db.Group
-	if err = db.Database.Find(&group, payload.GroupID).Error; err != nil {
+	if err = db.Client.Find(&group, payload.GroupID).Error; err != nil {
 		Response(w, http.StatusNotFound, nil)
 		return
 	}
 
 	userToUpdate.GroupID = group.ID
-	db.Database.Save(&userToUpdate)
+	db.Client.Save(&userToUpdate)
 
 	ws.Pipeline <- ws.Event{
 		Event: ws.USER_UPDATE,

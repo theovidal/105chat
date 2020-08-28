@@ -16,7 +16,7 @@ func Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user db.User
-	if err := db.Database.Where("email = ?", payload.Email).Find(&user).Error; err != nil {
+	if err := db.Client.Where("email = ?", payload.Email).Find(&user).Error; err != nil {
 		Response(w, http.StatusUnauthorized, nil)
 		return
 	}

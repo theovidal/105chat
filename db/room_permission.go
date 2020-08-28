@@ -19,7 +19,7 @@ func AppendRoomPermissions(group *Group, id uint) {
 	}
 
 	var roomPermissions []RoomPermission
-	Database.Where("group_id = ?", id).Find(&roomPermissions)
+	Client.Where("group_id = ?", id).Find(&roomPermissions)
 	for _, room := range roomPermissions {
 		group.RoomPermissions[room.RoomID] |= room.Permissions
 	}
