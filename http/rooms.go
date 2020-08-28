@@ -13,7 +13,7 @@ import (
 )
 
 func CreateRoom(w http.ResponseWriter, r *http.Request) {
-	if user := r.Context().Value("user").(db.User); !user.HasGlobalPermission(db.MANAGE_ROOM) {
+	if user := r.Context().Value("user").(*db.User); !user.HasGlobalPermission(db.MANAGE_ROOM) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -51,7 +51,7 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 func GetRooms(w http.ResponseWriter, r *http.Request) {
 	var rooms []db.Room
 
-	if user := r.Context().Value("user").(db.User); user.HasGlobalPermission(db.READ_MESSAGES) {
+	if user := r.Context().Value("user").(*db.User); user.HasGlobalPermission(db.READ_MESSAGES) {
 		db.Database.Find(&rooms)
 	} else {
 		var accessibleRooms []uint
@@ -73,7 +73,7 @@ func GetRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user := r.Context().Value("user").(db.User); !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
+	if user := r.Context().Value("user").(*db.User); !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -87,7 +87,7 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user := r.Context().Value("user").(db.User); !user.HasAnyPermission(room.ID, db.MANAGE_ROOM) {
+	if user := r.Context().Value("user").(*db.User); !user.HasAnyPermission(room.ID, db.MANAGE_ROOM) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -118,7 +118,7 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user := r.Context().Value("user").(db.User); !user.HasAnyPermission(room.ID, db.MANAGE_ROOM) {
+	if user := r.Context().Value("user").(*db.User); !user.HasAnyPermission(room.ID, db.MANAGE_ROOM) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}

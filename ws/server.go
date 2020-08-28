@@ -1,100 +1,88 @@
 package ws
 
 import (
-	"time"
+	"sync"
 
 	"golang.org/x/net/websocket"
 
 	"github.com/theovidal/105chat/db"
 )
 
-// Server starts the WebSocket server
-func Server(ws *websocket.Conn) {
-	websocket.JSON.Send(ws, Event{
-		Event: AUTHENTICATION_NEEDED,
-	})
+type StationEntity struct {
+	sync.RWMutex
+	clients map[string]*Client
+}
 
-	var user db.User
-	var trials int
+func (s *StationEntity) Initialize() {
+	s.clients = make(map[string]*Client)
+}
+
+func (s *StationEntity) GetUser(token string) (user *db.User, found bool) {
+	client, found := s.clients[token]
+	if !found {
+		return &db.User{}, false
+	} else {
+		return client.User, true
+	}
+}
+
+func (s *StationEntity) EditUser(user *db.User) {
+	s.clients[user.Token].User = user
+}
+
+// Station stores connections to the WebSocket server
+// In the future, would be replaced by a concurrent-specific map : https://github.com/streamrail/concurrent-map
+var Station StationEntity
+
+type Server struct {
+	ConnectPipeline    chan *Client
+	DisconnectPipeline chan *Client
+}
+
+func NewServer() *Server {
+	return &Server{
+		ConnectPipeline:    make(chan *Client),
+		DisconnectPipeline: make(chan *Client),
+	}
+}
+
+func (s *Server) AddClient(client *Client) {
+	Station.Lock()
+	Station.clients[client.User.Token] = client
+	Station.Unlock()
+}
+
+func (s *Server) DeleteClient(client *Client) {
+	Station.Lock()
+	delete(Station.clients, client.User.Token)
+	Station.Unlock()
+}
+
+func (s *Server) Handle(connection *websocket.Conn) {
+	client := NewClient(connection, s)
+	client.Listen()
+	connection.Close()
+}
+
+func (s *Server) Listen() {
+	Station.Initialize()
+	go HandlePipeline()
 
 	for {
-		if trials >= 3 {
-			websocket.JSON.Send(ws, Event{
-				Event: CLOSE,
-				Data:  "Too many failed authentications",
-			})
-			ws.Close()
-			break
-		}
+		select {
+		case client := <-s.ConnectPipeline:
+			s.AddClient(client)
+			Pipeline <- Event{
+				Event: USER_CONNECT,
+				Data:  client.User.ID,
+			}
 
-		ws.SetReadDeadline(time.Now().Add(time.Minute))
-		var event Event
-		if err := websocket.JSON.Receive(ws, &event); err != nil {
+		case client := <-s.DisconnectPipeline:
+			s.DeleteClient(client)
 			Pipeline <- Event{
 				Event: USER_DISCONNECT,
-				Data:  user.ID,
+				Data:  client.User.ID,
 			}
-			station.Lock()
-			delete(station.clients, user.ID)
-			station.Unlock()
-			break
-		}
-
-		if user.ID == 0 {
-			if event.Event == CONNECT {
-				token, valid := event.Data.(string)
-				if !valid {
-					websocket.JSON.Send(ws, Event{
-						Event: ERROR,
-						Data:  ERROR402,
-					})
-					continue
-				}
-
-				var err error
-				user, err = db.FindUserByToken(token)
-				if err != nil {
-					websocket.JSON.Send(ws, Event{
-						Event: AUTHENTICATION_FAIL,
-					})
-					trials += 1
-				} else {
-					if user.Disabled {
-						websocket.JSON.Send(ws, Event{
-							Event: ERROR,
-							Data:  ERROR405,
-						})
-						ws.Close()
-					}
-					websocket.JSON.Send(ws, Event{
-						Event: AUTHENTICATION_SUCCESS,
-						Data:  &user,
-					})
-					station.Lock()
-					station.clients[user.ID] = ws
-					station.Unlock()
-					Pipeline <- Event{
-						Event: USER_CONNECT,
-						Data:  user.ID,
-					}
-				}
-			} else {
-				websocket.JSON.Send(ws, Event{
-					Event: ERROR,
-					Data:  ERROR401,
-				})
-			}
-			continue
-		}
-
-		handler, valid := clientEvents[event.Event]
-		if !valid {
-			websocket.JSON.Send(ws, Event{
-				Event: ERROR,
-				Data:  ERROR404,
-			})
-		} else {
-			handler(ws, &user, &event)
 		}
 	}
 }

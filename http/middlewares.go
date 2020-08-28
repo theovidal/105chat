@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/theovidal/105chat/db"
-	"github.com/theovidal/105chat/http/controllers"
+	"github.com/theovidal/105chat/ws"
 )
 
 // AuthenticationMiddleware checks that user is authenticated before doing a request
@@ -16,7 +16,8 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 
-		if user, err := controllers.FindUserFromRequest(r); err == nil {
+		token := r.Header.Get("Authentication")
+		if user, found := ws.Station.GetUser(token); found {
 			if user.Disabled {
 				Response(w, http.StatusForbidden, nil)
 			} else {

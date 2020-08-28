@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
 	"os"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
-	"golang.org/x/net/websocket"
-
 	"github.com/theovidal/105chat/db"
 	httpServer "github.com/theovidal/105chat/http"
 	"github.com/theovidal/105chat/ws"
@@ -100,12 +99,17 @@ func Help(_ []string) {
 // Run is a CLI command that starts the 105chat API
 func Run(_ []string) {
 	color.HiCyan("\n  _____   ________   ________   ________   ___  ___   ________   _________   \n / __  \\ |\\   __  \\ |\\   ____\\ |\\   ____\\ |\\  \\|\\  \\ |\\   __  \\ |\\___   ___\\ \n|\\/_|\\  \\\\ \\  \\|\\  \\\\ \\  \\___|_\\ \\  \\___| \\ \\  \\\\\\  \\\\ \\  \\|\\  \\\\|___ \\  \\_| \n\\|/ \\ \\  \\\\ \\  \\\\\\  \\\\ \\_____  \\\\ \\  \\     \\ \\   __  \\\\ \\   __  \\    \\ \\  \\  \n     \\ \\  \\\\ \\  \\\\\\  \\\\|____|\\  \\\\ \\  \\____ \\ \\  \\ \\  \\\\ \\  \\ \\  \\    \\ \\  \\ \n      \\ \\__\\\\ \\_______\\ ____\\_\\  \\\\ \\_______\\\\ \\__\\ \\__\\\\ \\__\\ \\__\\    \\ \\__\\\n       \\|__| \\|_______||\\_________\\\\|_______| \\|__|\\|__| \\|__|\\|__|     \\|__|\n                       \\|_________|                                          \n")
+
+	log.Println(color.CyanString("⏩ Step 1: Open database"))
 	db.OpenDatabase()
 
-	go ws.HandlePipeline()
-	http.Handle("/v1/ws", websocket.Handler(ws.Server))
-
+	log.Println(color.CyanString("⏩ Step 2: Start HTTP server"))
 	go httpServer.Server()
+
+	log.Println(color.CyanString("⏩ Step 3: Start WS server"))
+	wsServer := ws.NewServer()
+	go wsServer.Listen()
+	http.Handle("/v1/ws", websocket.Handler(wsServer.Handle))
 
 	addr := os.Getenv("WS_ADDRESS") + ":" + os.Getenv("WS_PORT")
 	log.Println("▶ WS server listening on", color.CyanString("ws://"+addr))

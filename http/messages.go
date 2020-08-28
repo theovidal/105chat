@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/asaskevich/govalidator"
 
@@ -16,7 +15,7 @@ import (
 
 // CreateMessage sends a message from a user in a room
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(db.User)
+	user := r.Context().Value("user").(*db.User)
 	room, err := ParseRoomFromURL(&w, r)
 	if err != nil {
 		return
@@ -33,19 +32,14 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var announcement bool
-	if user.HasAnyPermission(room.ID, db.SEND_ANNOUNCEMENTS) {
-		announcement = payload.Announcement
-	}
-
 	message := db.Message{
 		ID:           utils.GenerateSnowflake(),
 		RoomID:       room.ID,
 		UserID:       user.ID,
 		Content:      govalidator.Trim(payload.Content, ""),
-		Announcement: announcement,
+		Announcement: payload.Announcement && user.HasAnyPermission(room.ID, db.SEND_ANNOUNCEMENTS),
 		Private:      false,
-		Timestamp:    time.Now().Unix(),
+		Timestamp:    utils.Now(),
 	}
 
 	if err = db.Database.Create(&message).Error; err != nil {
@@ -68,7 +62,7 @@ func GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("user").(db.User)
+	user := r.Context().Value("user").(*db.User)
 	fmt.Println(user.Group)
 	if !user.HasAnyPermission(room.ID, db.READ_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
@@ -95,7 +89,7 @@ func GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user := r.Context().Value("user").(db.User); !user.HasAnyPermission(message.RoomID, db.READ_MESSAGES) {
+	if user := r.Context().Value("user").(*db.User); !user.HasAnyPermission(message.RoomID, db.READ_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -110,7 +104,7 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("user").(db.User)
+	user := r.Context().Value("user").(*db.User)
 	if (message.UserID != user.ID || !user.HasAnyPermission(message.RoomID, db.WRITE_MESSAGES)) || user.Muted {
 		Response(w, http.StatusForbidden, nil)
 		return
@@ -132,7 +126,7 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 		Event: ws.MESSAGE_UPDATE,
 		Data:  &message,
 	}
-	Response(w, http.StatusNoContent, nil)
+	Response(w, http.StatusOK, &message)
 }
 
 // UpdateRoomMessage is used by a user to delete one of their message
@@ -142,22 +136,23 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("user").(db.User)
+	user := r.Context().Value("user").(*db.User)
 	if message.UserID != user.ID && !user.HasAnyPermission(message.RoomID, db.MANAGE_MESSAGES) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
 
 	db.Database.Delete(message)
+	remainingData := utils.H{
+		"id":      message.ID,
+		"room_id": message.RoomID,
+	}
 
 	ws.Pipeline <- ws.Event{
 		Event: ws.MESSAGE_DELETE,
-		Data: utils.H{
-			"id":      message.ID,
-			"room_id": message.RoomID,
-		},
+		Data:  &remainingData,
 	}
-	Response(w, http.StatusNoContent, nil)
+	Response(w, http.StatusOK, &remainingData)
 }
 
 // ParseMessageFromURL checks for errors in the passed message ID inside request's URL

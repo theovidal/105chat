@@ -8,7 +8,7 @@ type Event struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-// API to Client events
+// Server to Client events
 const (
 	AUTHENTICATION_NEEDED  = "AUTHENTICATION_NEEDED"
 	AUTHENTICATION_SUCCESS = "AUTHENTICATION_SUCCESS"

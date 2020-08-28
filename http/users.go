@@ -26,7 +26,7 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	authenticatedUser := r.Context().Value("user").(db.User)
+	authenticatedUser := r.Context().Value("user").(*db.User)
 	if userToUpdate.ID != authenticatedUser.ID && !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
 		Response(w, http.StatusForbidden, nil)
 		return
@@ -50,6 +50,7 @@ func UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		Event: ws.USER_UPDATE,
 		Data:  &userToUpdate,
 	}
+	ws.Station.EditUser(userToUpdate)
 	Response(w, http.StatusNoContent, nil)
 }
 
@@ -58,7 +59,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	authenticatedUser := r.Context().Value("user").(db.User)
+	authenticatedUser := r.Context().Value("user").(*db.User)
 	if !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
 		Response(w, http.StatusForbidden, nil)
 		return
@@ -78,6 +79,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		Event: ws.USER_UPDATE,
 		Data:  &userToUpdate,
 	}
+	ws.Station.EditUser(userToUpdate)
 	Response(w, http.StatusNoContent, nil)
 }
 
@@ -86,7 +88,7 @@ func GetUserGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	authenticatedUser := r.Context().Value("user").(db.User)
+	authenticatedUser := r.Context().Value("user").(*db.User)
 
 	if userToFetch.ID != authenticatedUser.ID && !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
 		Response(w, http.StatusForbidden, nil)
@@ -105,7 +107,7 @@ func UpdateUserGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	authenticatedUser := r.Context().Value("user").(db.User)
+	authenticatedUser := r.Context().Value("user").(*db.User)
 
 	if !authenticatedUser.HasGlobalPermission(db.MANAGE_USERS) {
 		Response(w, http.StatusForbidden, nil)
@@ -131,6 +133,7 @@ func UpdateUserGroup(w http.ResponseWriter, r *http.Request) {
 		Event: ws.USER_UPDATE,
 		Data:  &userToUpdate,
 	}
+	ws.Station.EditUser(userToUpdate)
 	Response(w, http.StatusNoContent, nil)
 }
 

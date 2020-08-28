@@ -14,7 +14,7 @@ import (
 
 // CreateGroup creates a new group with its own permissions
 func CreateGroup(w http.ResponseWriter, r *http.Request) {
-	if user := r.Context().Value("user").(db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
+	if user := r.Context().Value("user").(*db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -85,7 +85,7 @@ func GetGroup(w http.ResponseWriter, r *http.Request) {
 
 // UpdateGroup updates a group with its permissions, room permissions and inheritances
 func UpdateGroup(w http.ResponseWriter, r *http.Request) {
-	if user := r.Context().Value("user").(db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
+	if user := r.Context().Value("user").(*db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -120,16 +120,22 @@ func UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		Event: ws.GROUP_UPDATE,
 		Data:  &group,
 	}
+
+	var status int
 	if len(errorsList) > 0 {
-		Response(w, http.StatusPartialContent, errorsList)
+		status = http.StatusPartialContent
 	} else {
-		Response(w, http.StatusNoContent, nil)
+		status = http.StatusCreated
 	}
+	Response(w, status, utils.H{
+		"id":     group.ID,
+		"errors": errorsList,
+	})
 }
 
 // DeleteGroup deletes a group and assigns its users to a fallback group
 func DeleteGroup(w http.ResponseWriter, r *http.Request) {
-	if user := r.Context().Value("user").(db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
+	if user := r.Context().Value("user").(*db.User); !user.HasGlobalPermission(db.MANAGE_GROUPS) {
 		Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -152,14 +158,16 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	remainingData := utils.H{
+		"group_id":          group.ID,
+		"fallback_group_id": payload.FallbackGroupID,
+	}
+
 	ws.Pipeline <- ws.Event{
 		Event: ws.GROUP_DELETE,
-		Data: utils.H{
-			"group_id":          group.ID,
-			"fallback_group_id": payload.FallbackGroupID,
-		},
+		Data:  &remainingData,
 	}
-	Response(w, http.StatusAccepted, nil)
+	Response(w, http.StatusAccepted, &remainingData)
 
 	var usersToUpdate []db.User
 	db.Database.Where("group_id = ?", group.ID).Find(&usersToUpdate)
