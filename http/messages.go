@@ -50,6 +50,11 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.MESSAGE_CREATE,
 		Data:  &message,
+		Permission: ws.Permission{
+			Type:   "any",
+			RoomID: message.RoomID,
+			Value:  db.READ_MESSAGES,
+		},
 	}
 
 	Response(w, http.StatusCreated, &message)
@@ -124,6 +129,11 @@ func UpdateRoomMessage(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.MESSAGE_UPDATE,
 		Data:  &message,
+		Permission: ws.Permission{
+			Type:   "any",
+			RoomID: message.RoomID,
+			Value:  db.READ_MESSAGES,
+		},
 	}
 	Response(w, http.StatusOK, &message)
 }
@@ -150,6 +160,11 @@ func DeleteRoomMessage(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.MESSAGE_DELETE,
 		Data:  &remainingData,
+		Permission: ws.Permission{
+			Type:   "any",
+			RoomID: message.RoomID,
+			Value:  db.READ_MESSAGES,
+		},
 	}
 	Response(w, http.StatusOK, &remainingData)
 }

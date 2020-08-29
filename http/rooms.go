@@ -44,6 +44,10 @@ func CreateRoom(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.ROOM_CREATE,
 		Data:  &room,
+		Permission: ws.Permission{
+			Type:  "global",
+			Value: db.READ_MESSAGES,
+		},
 	}
 	Response(w, http.StatusCreated, &room)
 }
@@ -109,6 +113,11 @@ func UpdateRoom(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.ROOM_UPDATE,
 		Data:  &room,
+		Permission: ws.Permission{
+			Type:   "any",
+			RoomID: room.ID,
+			Value:  db.READ_MESSAGES,
+		},
 	}
 	Response(w, http.StatusOK, &room)
 }
@@ -130,6 +139,11 @@ func DeleteRoom(w http.ResponseWriter, r *http.Request) {
 	ws.Pipeline <- ws.Event{
 		Event: ws.ROOM_DELETE,
 		Data:  &remaining,
+		Permission: ws.Permission{
+			Type:   "any",
+			RoomID: room.ID,
+			Value:  db.READ_MESSAGES,
+		},
 	}
 	Response(w, http.StatusAccepted, &remaining)
 

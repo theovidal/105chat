@@ -4,8 +4,20 @@ package ws
 type Event struct {
 	// The type of the event, as defined in the constants below
 	Event string `json:"event"`
+	// Permissions to have in order to receive this event
+	Permission Permission `json:"-"`
 	// The data related to the event (message, room, user...)
 	Data interface{} `json:"data,omitempty"`
+}
+
+// Permission defines the permissions a user must have in order to receive a particular event
+type Permission struct {
+	// Type of the permission: global - room - any
+	Type string
+	// ID of the room, if the permission type is room or any
+	RoomID uint
+	// Permission bit
+	Value uint
 }
 
 // Server to Client events

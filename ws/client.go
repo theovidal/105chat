@@ -129,9 +129,23 @@ func (c *Client) ListenServerEvents() {
 			return
 
 		case event := <-c.Pipeline:
-			err := websocket.JSON.Send(c.Connection, event)
-			if err != nil {
-				c.ClosePipeline <- true
+			display := true
+			if event.Permission.Value != 0 {
+				switch event.Permission.Type {
+				case "global":
+					display = c.User.HasGlobalPermission(event.Permission.Value)
+				case "room":
+					display = c.User.HasRoomPermission(event.Permission.RoomID, event.Permission.Value)
+				case "any":
+					display = c.User.HasAnyPermission(event.Permission.RoomID, event.Permission.Value)
+				}
+			}
+
+			if display {
+				err := websocket.JSON.Send(c.Connection, event)
+				if err != nil {
+					c.ClosePipeline <- true
+				}
 			}
 		}
 	}
