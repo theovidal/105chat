@@ -12,8 +12,8 @@ type User struct {
 	AvatarURL string `json:"avatar_url" valid:"url"`
 	// Description of the user, 0~512 characters
 	Description string `json:"description" gorm:"size:512" valid:"length(0|512)"`
-	// Color of the user (stored as an integer for less complexity)
-	Color uint `json:"color" valid:"range(0|16777215)"`
+	// Color of the user (hex string)
+	Color string `json:"color" valid:"hexcolor"`
 	// When the user was created (via registration or administrator action)
 	Timestamp int64 `json:"timestamp"`
 	// Identifier of user's group, Twitter snowflake

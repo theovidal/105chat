@@ -12,9 +12,11 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
+// letters is a list of all the letters that can compose a salt
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func randSeq(n int) string {
+// GenerateSalt generates a n-length salt for password generation
+func GenerateSalt(n int) string {
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
@@ -22,7 +24,8 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func GenerateToken() string {
+// GenerateToken generates a token for user to interact with the API
+func _() string {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return ""
@@ -30,9 +33,10 @@ func GenerateToken() string {
 	return hex.EncodeToString(b)
 }
 
-func GeneratePassword(raw string) string {
+// GeneratePassword generates an Argon2ID hashed password
+func _(raw string) string {
 	rand.Seed(time.Now().UnixNano())
-	salt := []byte(randSeq(10))
+	salt := []byte(GenerateSalt(10))
 
 	var ptime uint32 = 1
 	var memory uint32 = 64 * 1024
@@ -48,6 +52,7 @@ func GeneratePassword(raw string) string {
 	return fmt.Sprintf(format, argon2.Version, memory, ptime, threads, b64Salt, b64Hash)
 }
 
+// ComparePasswords compares an input password with a hashed password (Argon2ID)
 func ComparePasswords(password, hash string) bool {
 	parts := strings.Split(hash, "$")
 

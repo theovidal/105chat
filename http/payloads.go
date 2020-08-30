@@ -11,7 +11,7 @@ type UserProfileUpdatePayload struct {
 	Name        string
 	AvatarURL   string `json:"avatar_url"`
 	Description string
-	Color       uint
+	Color       string
 }
 
 // UserUpdatePayload is sent by a user with the MANAGE_USERS permission to update a user
@@ -28,7 +28,7 @@ type UserGroupUpdatePayload struct {
 // GroupPayload is sent to create or update a group and its permissions, room permissions and inheritances
 type GroupPayload struct {
 	Name            string
-	Color           uint
+	Color           string
 	Permissions     uint
 	RoomPermissions map[uint]uint `json:"room_permissions" gorm:"-"`
 	Inheritances    []uint        `json:"inheritances" gorm:"-"`
@@ -44,7 +44,7 @@ type RoomPayload struct {
 	Name        string
 	AvatarURL   string `json:"avatar_url"`
 	Description string
-	Color       uint
+	Color       string
 }
 
 // MessageCreatePayload is sent to create a message in a room

@@ -20,8 +20,8 @@ type Group struct {
 	ID uint `json:"id" gorm:"primary_key"`
 	// Name of the group
 	Name string `json:"name" gorm:"size:32" valid:"length(2|32)"`
-	// Color of the group (stored as an integer for less complexity)
-	Color uint `json:"color" valid:"range(0|16777215)"`
+	// Color of the group (hex string)
+	Color string `json:"color" valid:"hexcolor"`
 	// Global permissions the group has
 	Permissions uint `json:"permissions"`
 	// Permissions specific to rooms (used internally)
