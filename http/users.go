@@ -11,6 +11,13 @@ import (
 	"github.com/theovidal/105chat/ws"
 )
 
+func GetUsers(w http.ResponseWriter, _ *http.Request) {
+	var users []db.User
+	db.Client.Find(&users)
+
+	Response(w, http.StatusOK, users)
+}
+
 // GetUser returns information about a specific user thanks to their ID
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err := ParseUserFromURL(&w, r)

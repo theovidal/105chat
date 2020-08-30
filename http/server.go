@@ -22,6 +22,9 @@ var operations = map[string]Methods{
 	"auth": {
 		"POST": Authenticate,
 	},
+	"users": {
+		"GET": GetUsers,
+	},
 	"users/{user}": {
 		"GET":   GetUser,
 		"PATCH": UpdateUserProfile,
@@ -67,7 +70,7 @@ func Server() {
 	for path, methods := range operations {
 		fullPath := fmt.Sprintf("/v1/http/%s", path)
 		for method, handler := range methods {
-			httpServer.HandleFunc(fullPath, handler).Methods(method)
+			httpServer.HandleFunc(fullPath, handler).Methods(method, http.MethodOptions)
 		}
 	}
 
